@@ -48,43 +48,22 @@ source_text = st.text_area(
 )
 
 if st.button("開始翻譯", type="primary"):
-    if not source_text:
-        st.warning("請先輸入內容喔！")
-    else:
-        with st.spinner("AI 正在翻譯中..."):
-            try:
-                # 診斷代碼：列出你的 Key 目前能用的所有模型（如果還是 404 可以檢查這裡）
-                # models_list = [m.name for m in genai.list_models()]
-                # st.write(f"系統偵測模型：{models_list}") 
-
-                # 嘗試使用正式版名稱
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                
-                # 修正提示：如果上面的 model 建立失敗，改用下方的替代方案
-                # model = genai.GenerativeModel('models/gemini-1.5-flash')
-                
-                prompt = (
-                    f"你是一位專業的翻譯官。請將以下內容翻譯成{target_lang}，"
-                    f"語氣設定為【{tone}】。請直接輸出翻譯結果，不要有額外評論：\n\n{source_text}"
-                )
-                
-                response = model.generate_content(prompt)
-                
-                if response.text:
-                    st.success("翻譯完成！")
-                    st.markdown("### 翻譯結果：")
-                    st.info(response.text)
-            except Exception as e:
-                st.error(f"連線錯誤：{e}")
-                # 這裡是一個自動救援邏輯：如果 flash 失敗，改試試 pro
-                if "404" in str(e):
-                    st.info("正在嘗試備用模型 (gemini-1.5-pro)...")
-                    try:
-                        model_backup = genai.GenerativeModel('gemini-1.5-pro')
-                        response = model_backup.generate_content(prompt)
-                        st.info(response.text)
-                    except:
-                        st.error("所有模型均無法連線，請檢查 API Key 是否在 Google AI Studio 申請。")
+    with st.spinner("診斷中..."):
+        try:
+            # 列出所有可用的模型名稱
+            models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            st.write("你的 Key 支援的模型清單：")
+            st.json(models)
+            
+            # 使用清單中的第一個模型進行測試
+            if models:
+                test_model = genai.GenerativeModel(models[0])
+                response = test_model.generate_content("Hi")
+                st.success(f"測試成功！使用模型：{models[0]}")
+            else:
+                st.error("你的 API Key 沒有支援任何生成模型。")
+        except Exception as e:
+            st.error(f"診斷失敗：{e}")
 
 st.divider()
 st.caption("🚀 部署完成後，將此網址貼進 EEP 即可在手機使用。")
