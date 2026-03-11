@@ -53,9 +53,15 @@ if st.button("開始翻譯", type="primary"):
     else:
         with st.spinner("AI 正在翻譯中..."):
             try:
-                # 修正點：改用更保險的模型名稱定義方式
-                # 如果 gemini-1.5-flash 報 404，程式會嘗試抓取
+                # 診斷代碼：列出你的 Key 目前能用的所有模型（如果還是 404 可以檢查這裡）
+                # models_list = [m.name for m in genai.list_models()]
+                # st.write(f"系統偵測模型：{models_list}") 
+
+                # 嘗試使用正式版名稱
                 model = genai.GenerativeModel('gemini-1.5-flash')
+                
+                # 修正提示：如果上面的 model 建立失敗，改用下方的替代方案
+                # model = genai.GenerativeModel('models/gemini-1.5-flash')
                 
                 prompt = (
                     f"你是一位專業的翻譯官。請將以下內容翻譯成{target_lang}，"
@@ -68,14 +74,17 @@ if st.button("開始翻譯", type="primary"):
                     st.success("翻譯完成！")
                     st.markdown("### 翻譯結果：")
                     st.info(response.text)
-                else:
-                    st.warning("AI 沒有回傳任何內容。")
-                    
             except Exception as e:
-                # 捕獲所有錯誤，包括 404
                 st.error(f"連線錯誤：{e}")
+                # 這裡是一個自動救援邏輯：如果 flash 失敗，改試試 pro
                 if "404" in str(e):
-                    st.info("💡 提示：這通常是 API 版本或模型名稱問題。請確認你的 API Key 權限，或稍後再試。")
+                    st.info("正在嘗試備用模型 (gemini-1.5-pro)...")
+                    try:
+                        model_backup = genai.GenerativeModel('gemini-1.5-pro')
+                        response = model_backup.generate_content(prompt)
+                        st.info(response.text)
+                    except:
+                        st.error("所有模型均無法連線，請檢查 API Key 是否在 Google AI Studio 申請。")
 
 st.divider()
 st.caption("🚀 部署完成後，將此網址貼進 EEP 即可在手機使用。")
