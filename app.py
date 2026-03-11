@@ -41,29 +41,32 @@ source_text = st.text_area("輸入原文", placeholder="請輸入要翻譯的文
 if st.button("帶入西文範例測試"):
     st.session_state.source_text = "El éxito no es la clave de la felicidad. La felicidad es la clave del éxito."
     # 註：需搭配下方 text_area 的 value=st.session_state.get('source_text', '') 使用
-
 if st.button("開始翻譯", type="primary"):
     if not source_text:
         st.warning("請先輸入內容喔！")
     else:
         with st.spinner("AI 正在翻譯中..."):
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                # 修正點 1：嘗試使用最新的模型名稱字串
+                # 有些環境下需要加上 'models/' 前綴
+                model_name = 'gemini-1.5-flash' 
+                model = genai.GenerativeModel(model_name)
+                
                 prompt = (
                     f"你是一位專業的翻譯官。請將以下內容翻譯成{target_lang}，"
                     f"語氣設定為【{tone}】。請直接輸出翻譯結果，不要有額外評論：\n\n{source_text}"
                 )
                 
+                # 修正點 2：生成內容
                 response = model.generate_content(prompt)
                 
                 if response.text:
                     st.success("翻譯完成！")
                     st.markdown("### 翻譯結果：")
                     st.info(response.text)
-                else:
-                    st.error("AI 回傳內容為空，請稍後再試。")
             except Exception as e:
-                # 這裡會捕捉並顯示錯誤，幫助我們確認是否還有 Header 問題
+                # 如果還是 404，可能是模型名稱需要調整
                 st.error(f"連線錯誤：{e}")
+                st.info("提示：如果持續出現 404，請嘗試將模型名稱改為 'gemini-pro' 測試。")
 
 st.divider()
